@@ -1,36 +1,29 @@
-# Build Stage
-FROM golang:1.23-alpine AS base
+# Build stage
+FROM golang:1.23-alpine AS builder
 
-WORKDIR /home/app
+WORKDIR /app
+
+# Copy Go module files
+COPY go.mod go.sum ./
+
+# Download dependencies early
+RUN go mod download
+
+# Copy the rest of the app source code
 COPY . .
+RUN go mod tidy
 
-ARG DRIVER_NAME=olake
-# Build the Go binary
-WORKDIR /home/app/drivers/${DRIVER_NAME}
-RUN go build -o /olake main.go
+# Build the binary
+RUN go build -o olake ./app && chmod +x olake
 
-# Final Runtime Stage
+
+# Final lightweight image with Java 17
 FROM alpine:3.18
 
-# Install Java 17 instead of Java 11
 RUN apk add --no-cache openjdk17
 
-# Copy the binary from the build stage
-COPY --from=base /olake /home/olake
+COPY --from=builder /app/olake /home/olake
 
-# Copy the pre-built JAR file from Maven
-# First try to copy from the source location (works after Maven build)
-COPY writers/iceberg/debezium-server-iceberg-sink/target/debezium-server-iceberg-sink-0.0.1-SNAPSHOT.jar /home/debezium-server-iceberg-sink.jar
-
-
-ARG DRIVER_VERSION=dev
-ARG DRIVER_NAME=olake
-# Metadata
-LABEL io.eggwhite.version=${DRIVER_VERSION}
-LABEL io.eggwhite.name=olake/source-${DRIVER_NAME}
-
-# Set working directory
 WORKDIR /home
 
-# Entrypoint
 ENTRYPOINT ["./olake"]

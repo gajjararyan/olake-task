@@ -2,6 +2,8 @@ module github.com/datazip-inc/olake
 
 go 1.23.2
 
+replace github.com/datazip-inc/olake => .
+
 toolchain go1.23.7
 
 require (

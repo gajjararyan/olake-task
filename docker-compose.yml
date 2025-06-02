@@ -1,11 +1,15 @@
+version: '3'
 services:
-  mongodb_sync:
-    image: olakego/source-mongodb:latest
-    command: >
-      sync
-      --config /mnt/config/config.json
-      --catalog /mnt/config/catalog.json
-      --destination /mnt/config/writer.json
-      --state /mnt/config/state.json
+  postgres:
+    image: postgres:16
+    container_name: my_postgres
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: orders_db
+    ports:
+      - "5432:5432"
     volumes:
-      - ./drivers/mongodb/examples:/mnt/config
+      - pgdata:/var/lib/postgresql/data
+volumes:
+  pgdata:
